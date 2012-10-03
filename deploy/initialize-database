@@ -1,0 +1,52 @@
+#!/bin/sh
+
+MYSQL="/usr/clearos/sandbox/usr/bin/mysql"
+MYSQLADMIN="/usr/clearos/sandbox/usr/bin/mysqladmin"
+
+DB_CONFIG="/var/clearos/system_database/root"
+APP_DB_CONFIG="/var/clearos/system_database/reports"
+APP_DB_NAME="reports"
+APP_DB_USERNAME="reports"
+
+# Start system database
+#----------------------
+
+/usr/clearos/apps/system_database/deploy/bootstrap
+
+# Grab root database password
+#----------------------------
+
+ROOTPASS=`grep ^password $DB_CONFIG 2>/dev/null | sed "s/^password[[:space:]]*=[[:space:]]*//"`
+
+if [ -z "$ROOTPASS" ]; then
+    echo "Unable to authenticate with database"
+    exit 1
+fi
+
+# Create databases (if necessary) 
+#--------------------------------
+
+$MYSQL -uroot -p"$ROOTPASS" -e 'status;' $APP_DB_NAME >/dev/null 2>&1
+
+if [ $? -ne 0 ]; then
+    logger -p local6.notice -t installer "app-reports-database-core - creating $APP_DB_NAME database"
+    $MYSQLADMIN -uroot -p"$ROOTPASS" --default-character-set=utf8 create $APP_DB_NAME >/dev/null 2>&1
+fi
+
+# Add/Update database password
+#-----------------------------
+
+APP_PASSWORD=`grep ^password $APP_DB_CONFIG 2>/dev/null | sed "s/^password[[:space:]]*=[[:space:]]*//"`
+
+if [ -z "$APP_PASSWORD" ]; then
+    logger -p local6.notice -t installer "app-reports-database-core - generating password"
+    APP_PASSWORD=`openssl rand -base64 20`
+    touch $APP_DB_CONFIG
+    chmod 600 $APP_DB_CONFIG
+    echo "password = $APP_PASSWORD" >> $APP_DB_CONFIG
+fi
+
+APP_PASSWORD_SEDSAFE=`echo $APP_PASSWORD | sed 's/\//\\\\\//g'`
+
+logger -p local6.notice -t installer "app-reports-database-core - updating privileges"
+$MYSQL -uroot -p"$ROOTPASS" -e "GRANT ALL PRIVILEGES ON $APP_DB_NAME.* TO $APP_DB_USERNAME@localhost IDENTIFIED BY \"$APP_PASSWORD\" WITH GRANT OPTION;" $APP_DB_NAME >/dev/null 2>&1
