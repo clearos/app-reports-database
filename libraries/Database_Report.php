@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Report database class.
+ * Database report base class.
  *
  * @category   Apps
  * @package    Reports_Database
@@ -52,18 +52,28 @@ clearos_load_language('reports_database');
 // D E P E N D E N C I E S
 ///////////////////////////////////////////////////////////////////////////////
 
+// Classes
+//--------
+
 use \clearos\apps\base\Configuration_File as Configuration_File;
-use \clearos\apps\base\Engine as Engine;
+use \clearos\apps\reports\Report as Report;
 
 clearos_load_library('base/Configuration_File');
-clearos_load_library('base/Engine');
+clearos_load_library('reports/Report');
+
+// Exceptions
+//-----------
+
+use \clearos\apps\base\Engine_Exception as Engine_Exception;
+
+clearos_load_library('base/Engine_Exception');
 
 ///////////////////////////////////////////////////////////////////////////////
 // C L A S S
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
- * Report database class.
+ * Database report base class.
  *
  * @category   Apps
  * @package    Reports_Database
@@ -74,7 +84,7 @@ clearos_load_library('base/Engine');
  * @link       http://www.clearfoundation.com/docs/developer/apps/reports_database/
  */
 
-class Report extends Engine
+class Database_Report extends Report
 {
     ///////////////////////////////////////////////////////////////////////////////
     // C O N S T A N T S
@@ -85,51 +95,27 @@ class Report extends Engine
     const DB_USER = 'reports';
     const DB_NAME = 'reports';
 
-    const RANGE_TODAY = 'today';
-    const RANGE_YESTERDAY = 'yesterday';
-    const RANGE_LAST_7_DAYS = 'last7';
-    const RANGE_LAST_30_DAYS = 'last30';
-
     const FILE_CONFIG_DB = '/var/clearos/system_database/reports';
 
     ///////////////////////////////////////////////////////////////////////////////
     // V A R I A B L E S
     ///////////////////////////////////////////////////////////////////////////////
 
-    protected $config = NULL;
-    protected $ranges = array();
+    protected $db_config = NULL;
 
     ///////////////////////////////////////////////////////////////////////////////
     // M E T H O D S
     ///////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Report constructor.
+     * Database report constructor.
      */
 
     public function __construct()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $this->ranges = array(
-            self::RANGE_TODAY => lang('reports_today'),
-            self::RANGE_YESTERDAY => lang('reports_yesterday'),
-            self::RANGE_LAST_7_DAYS => lang('reports_last_7_days'),
-            self::RANGE_LAST_30_DAYS => lang('reports_last_30_days')
-        );
-    }
-
-    /**
-     * Returns data ranges.
-     *
-     * @return array date ranges
-     */
-
-    public function get_date_ranges()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        return $this->ranges;
+        parent::__construct();
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -154,17 +140,17 @@ class Report extends Engine
         //-------------------
 
 // FIXME
-// $date_range = 'today';
-        if ($date_range === self::RANGE_TODAY) {
+// $date_range = 'yesterday';
+        if ($date_range === self::SUMMARY_RANGE_TODAY) {
             $date = date('Y-m-d');
             $range = " AND date(timestamp) = '$date'";
-        } else if ($date_range === self::RANGE_YESTERDAY) {
+        } else if ($date_range === self::SUMMARY_RANGE_YESTERDAY) {
             $date = date("Y-m-d", time() - 86400);
             $range = " AND date(timestamp) = '$date'";
-        } else if ($date_range === self::RANGE_LAST_7_DAYS) {
+        } else if ($date_range === self::SUMMARY_RANGE_LAST_7_DAYS) {
             $date = date("Y-m-d", time() - (7*86400));
             $range = " AND date(timestamp) >= '$date'";
-        } else if ($date_range === self::RANGE_LAST_30_DAYS) {
+        } else if ($date_range === self::SUMMARY_RANGE_LAST_30_DAYS) {
             $date = date("Y-m-d", time() - (30*86400));
             $range = " AND date(timestamp) >= '$date'";
         } else {
@@ -194,9 +180,9 @@ class Report extends Engine
         // Load configuration
         //-------------------
 
-        if (is_null($this->config)) {
+        if (is_null($this->db_config)) {
             $file = new Configuration_File(self::FILE_CONFIG_DB, 'explode', '=', 2);
-            $this->config = $file->load();
+            $this->db_config = $file->load();
         }
 
         // Run query
@@ -206,7 +192,7 @@ class Report extends Engine
             $dbh = new \PDO(
                 'mysql:host=' . self::DB_HOST . ';port=' . self::DB_PORT . ';dbname=' . self::DB_NAME,
                 self::DB_USER,
-                $this->config['password']
+                $this->db_config['password']
             );
 
             $dbs = $dbh->prepare($full_sql);
