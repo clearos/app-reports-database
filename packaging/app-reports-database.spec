@@ -15,7 +15,7 @@ The Reports Database provides a common set of tools for managing database-driven
 %package core
 Summary: Reports Database - Core
 Requires: app-base-core
-Requires: app-reports-core
+Requires: app-reports
 Requires: app-system-database-core >= 1:1.2.4
 
 %description core

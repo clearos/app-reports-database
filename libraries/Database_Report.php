@@ -119,10 +119,6 @@ class Database_Report extends Report
     }
 
     ///////////////////////////////////////////////////////////////////////////////
-    // V A L I D A T I O N   R O U T I N E S
-    ///////////////////////////////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////////
     // P R I V A T E   M E T H O D S
     ///////////////////////////////////////////////////////////////////////////////
 
@@ -132,29 +128,38 @@ class Database_Report extends Report
      * @return array table rows
      */
 
-    protected function _run_query($sql, $date_range, $records)
+    protected function _run_query($sql, $range, $timespan, $records = NULL)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         // Add data range SQL
         //-------------------
 
-// FIXME
-// $date_range = 'yesterday';
-        if ($date_range === self::SUMMARY_RANGE_TODAY) {
+        if ($range === self::RANGE_TODAY) {
             $date = date('Y-m-d');
             $range = " AND date(timestamp) = '$date'";
-        } else if ($date_range === self::SUMMARY_RANGE_YESTERDAY) {
+        } else if ($range === self::RANGE_YESTERDAY) {
             $date = date("Y-m-d", time() - 86400);
             $range = " AND date(timestamp) = '$date'";
-        } else if ($date_range === self::SUMMARY_RANGE_LAST_7_DAYS) {
+        } else if ($range === self::RANGE_LAST_7_DAYS) {
             $date = date("Y-m-d", time() - (7*86400));
             $range = " AND date(timestamp) >= '$date'";
-        } else if ($date_range === self::SUMMARY_RANGE_LAST_30_DAYS) {
+        } else if ($range === self::RANGE_LAST_30_DAYS) {
             $date = date("Y-m-d", time() - (30*86400));
             $range = " AND date(timestamp) >= '$date'";
         } else {
             $range = '';
+        }
+
+        // Add timespan handling
+        //----------------------
+
+        if ($timespan === self::INTERVAL_DAILY) {
+            $timespan = 'date(timestamp) AS timespan, ';
+        } else if ($timespan === self::INTERVAL_HOURLY) {
+            $timespan = 'hour(timestamp) AS timespan, ';
+        } else {
+            $timespan = '';
         }
 
         // Add record limit SQL
@@ -165,7 +170,7 @@ class Database_Report extends Report
         // Generate SQL statement
         //-----------------------
 
-        $select = 'SELECT ' . $sql['select'] . ' FROM ' . $sql['from'];
+        $select = 'SELECT ' . $timespan . ' ' . $sql['select'] . ' FROM ' . $sql['from'];
         $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
         $group_by = 'GROUP BY ' . $sql['group_by'];
         $order_by = 'ORDER BY ' . $sql['order_by'];
@@ -206,6 +211,9 @@ class Database_Report extends Report
         }
 
         $dbh = NULL;
+
+        // Fill in time gaps
+        //------------------
 
         return $rows;
     }

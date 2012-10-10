@@ -29,6 +29,6 @@ $app['menu_enabled'] = FALSE;
 $app['core_only'] = TRUE;
 
 $app['core_requires'] = array(
-    'app-reports-core',
+    'app-reports',
     'app-system-database-core >= 1:1.2.4',
 );
