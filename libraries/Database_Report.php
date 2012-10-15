@@ -56,10 +56,12 @@ clearos_load_language('reports_database');
 //--------
 
 use \clearos\apps\base\Configuration_File as Configuration_File;
-use \clearos\apps\reports\Report as Report;
+use \clearos\apps\base\Engine as Engine;
+use \clearos\apps\reports\Report_Engine as Report_Engine;
 
 clearos_load_library('base/Configuration_File');
-clearos_load_library('reports/Report');
+clearos_load_library('base/Engine');
+clearos_load_library('reports/Report_Engine');
 
 // Exceptions
 //-----------
@@ -84,7 +86,7 @@ clearos_load_library('base/Engine_Exception');
  * @link       http://www.clearfoundation.com/docs/developer/apps/reports_database/
  */
 
-class Database_Report extends Report
+class Database_Report extends Engine
 {
     ///////////////////////////////////////////////////////////////////////////////
     // C O N S T A N T S
@@ -114,8 +116,6 @@ class Database_Report extends Report
     public function __construct()
     {
         clearos_profile(__METHOD__, __LINE__);
-
-        parent::__construct();
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -135,16 +135,16 @@ class Database_Report extends Report
         // Add data range SQL
         //-------------------
 
-        if ($range === self::RANGE_TODAY) {
+        if ($range === Report_Engine::RANGE_TODAY) {
             $date = date('Y-m-d');
             $range = " AND date(timestamp) = '$date'";
-        } else if ($range === self::RANGE_YESTERDAY) {
+        } else if ($range === Report_Engine::RANGE_YESTERDAY) {
             $date = date("Y-m-d", time() - 86400);
             $range = " AND date(timestamp) = '$date'";
-        } else if ($range === self::RANGE_LAST_7_DAYS) {
+        } else if ($range === Report_Engine::RANGE_LAST_7_DAYS) {
             $date = date("Y-m-d", time() - (7*86400));
             $range = " AND date(timestamp) >= '$date'";
-        } else if ($range === self::RANGE_LAST_30_DAYS) {
+        } else if ($range === Report_Engine::RANGE_LAST_30_DAYS) {
             $date = date("Y-m-d", time() - (30*86400));
             $range = " AND date(timestamp) >= '$date'";
         } else {
@@ -154,9 +154,9 @@ class Database_Report extends Report
         // Add timespan handling
         //----------------------
 
-        if ($timespan === self::INTERVAL_DAILY) {
+        if ($timespan === Report_Engine::INTERVAL_DAILY) {
             $timespan = 'date(timestamp) AS timespan, ';
-        } else if ($timespan === self::INTERVAL_HOURLY) {
+        } else if ($timespan === Report_Engine::INTERVAL_HOURLY) {
             $timespan = 'hour(timestamp) AS timespan, ';
         } else {
             $timespan = '';
