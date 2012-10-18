@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'reports_database';
-$app['version'] = '1.2.9';
+$app['version'] = '1.4.0';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -31,4 +31,11 @@ $app['core_only'] = TRUE;
 $app['core_requires'] = array(
     'app-reports',
     'app-system-database-core >= 1:1.2.4',
+    'webconfig-php-mysql',
 );
+
+$app['core_directory_manifest'] = array(
+    '/var/clearos/reports_database' => array(),
+    '/var/clearos/reports_database/cache' => array(),
+);
+

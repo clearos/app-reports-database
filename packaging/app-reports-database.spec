@@ -1,7 +1,7 @@
 
 Name: app-reports-database
 Epoch: 1
-Version: 1.2.9
+Version: 1.4.0
 Release: 1%{dist}
 Summary: Reports Database - Core
 License: LGPLv3
@@ -17,6 +17,7 @@ Summary: Reports Database - Core
 Requires: app-base-core
 Requires: app-reports
 Requires: app-system-database-core >= 1:1.2.4
+Requires: webconfig-php-mysql
 
 %description core
 The Reports Database provides a common set of tools for managing database-driven reports.
@@ -31,6 +32,8 @@ This package provides the core API and libraries.
 mkdir -p -m 755 %{buildroot}/usr/clearos/apps/reports_database
 cp -r * %{buildroot}/usr/clearos/apps/reports_database/
 
+install -d -m 0755 %{buildroot}/var/clearos/reports_database
+install -d -m 0755 %{buildroot}/var/clearos/reports_database/cache
 
 %post core
 logger -p local6.notice -t installer 'app-reports-database-core - installing'
@@ -56,6 +59,8 @@ exit 0
 %exclude /usr/clearos/apps/reports_database/packaging
 %exclude /usr/clearos/apps/reports_database/tests
 %dir /usr/clearos/apps/reports_database
+%dir /var/clearos/reports_database
+%dir /var/clearos/reports_database/cache
 /usr/clearos/apps/reports_database/deploy
 /usr/clearos/apps/reports_database/language
 /usr/clearos/apps/reports_database/libraries

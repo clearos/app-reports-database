@@ -57,10 +57,12 @@ clearos_load_language('reports_database');
 
 use \clearos\apps\base\Configuration_File as Configuration_File;
 use \clearos\apps\base\Engine as Engine;
+use \clearos\apps\base\File as File;
 use \clearos\apps\reports\Report_Engine as Report_Engine;
 
 clearos_load_library('base/Configuration_File');
 clearos_load_library('base/Engine');
+clearos_load_library('base/File');
 clearos_load_library('reports/Report_Engine');
 
 // Exceptions
@@ -86,7 +88,7 @@ clearos_load_library('base/Engine_Exception');
  * @link       http://www.clearfoundation.com/docs/developer/apps/reports_database/
  */
 
-class Database_Report extends Engine
+class Database_Report extends Report_Engine
 {
     ///////////////////////////////////////////////////////////////////////////////
     // C O N S T A N T S
@@ -97,7 +99,9 @@ class Database_Report extends Engine
     const DB_USER = 'reports';
     const DB_NAME = 'reports';
 
+    const CACHE_TIME = 1800; // seconds // FIXME
     const FILE_CONFIG_DB = '/var/clearos/system_database/reports';
+    const PATH_CACHE = '/var/clearos/reports_database/cache';
 
     ///////////////////////////////////////////////////////////////////////////////
     // V A R I A B L E S
@@ -128,7 +132,7 @@ class Database_Report extends Engine
      * @return array table rows
      */
 
-    protected function _run_query($sql, $range, $timespan, $records = NULL)
+    protected function _run_query($sql, $range, $timespan, $records = 200)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -182,6 +186,25 @@ class Database_Report extends Engine
             $order_by . ' ' .
             $limit;
 
+        // Check cache
+        //------------
+
+        clearstatcache();
+
+        $cache_filename = self::PATH_CACHE . '/' . md5($full_sql);
+
+        $cache = new File($cache_filename);
+
+        if ($cache->exists()) {
+            $stat = stat($cache_filename);
+
+            if ((time() - $stat['ctime']) <= self::CACHE_TIME) {
+                return unserialize($cache->get_contents());
+            } else {
+                $cache->delete();
+            }
+        }
+
         // Load configuration
         //-------------------
 
@@ -212,8 +235,13 @@ class Database_Report extends Engine
 
         $dbh = NULL;
 
-        // Fill in time gaps
-        //------------------
+        // Handle cache
+        //-------------
+
+        if (! $cache->exists()) {
+            $cache->create('root', 'root', '0600');
+            $cache->add_lines(serialize($rows));
+        }
 
         return $rows;
     }
