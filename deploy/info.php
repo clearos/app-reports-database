@@ -39,3 +39,9 @@ $app['core_directory_manifest'] = array(
     '/var/clearos/reports_database/cache' => array(),
 );
 
+$app['core_file_manifest'] = array(
+    'initialize-report-tables' => array(
+        'target' => '/usr/sbin/initialize-report-tables',
+        'mode' => '0755',
+    ),
+);

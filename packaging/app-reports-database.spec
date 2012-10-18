@@ -34,6 +34,7 @@ cp -r * %{buildroot}/usr/clearos/apps/reports_database/
 
 install -d -m 0755 %{buildroot}/var/clearos/reports_database
 install -d -m 0755 %{buildroot}/var/clearos/reports_database/cache
+install -D -m 0755 packaging/initialize-report-tables %{buildroot}/usr/sbin/initialize-report-tables
 
 %post core
 logger -p local6.notice -t installer 'app-reports-database-core - installing'
@@ -64,3 +65,4 @@ exit 0
 /usr/clearos/apps/reports_database/deploy
 /usr/clearos/apps/reports_database/language
 /usr/clearos/apps/reports_database/libraries
+/usr/sbin/initialize-report-tables

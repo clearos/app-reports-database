@@ -58,11 +58,13 @@ clearos_load_language('reports_database');
 use \clearos\apps\base\Configuration_File as Configuration_File;
 use \clearos\apps\base\Engine as Engine;
 use \clearos\apps\base\File as File;
+use \clearos\apps\base\Folder as Folder;
 use \clearos\apps\reports\Report_Engine as Report_Engine;
 
 clearos_load_library('base/Configuration_File');
 clearos_load_library('base/Engine');
 clearos_load_library('base/File');
+clearos_load_library('base/Folder');
 clearos_load_library('reports/Report_Engine');
 
 // Exceptions
@@ -132,7 +134,7 @@ class Database_Report extends Report_Engine
      * @return array table rows
      */
 
-    protected function _run_query($sql, $range, $timespan, $records = 200)
+    protected function _run_query($app, $sql, $range, $timespan, $records = 200)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -191,8 +193,13 @@ class Database_Report extends Report_Engine
 
         clearstatcache();
 
-        $cache_filename = self::PATH_CACHE . '/' . md5($full_sql);
+        $cache_pathname = self::PATH_CACHE . '/' . $app;
+        $cache_folder = new Folder($cache_pathname);
 
+        if (! $cache_folder->exists())
+            $cache_folder->create('root', 'root', '0755');
+
+        $cache_filename = $cache_pathname . '/' . md5($full_sql);
         $cache = new File($cache_filename);
 
         if ($cache->exists()) {
