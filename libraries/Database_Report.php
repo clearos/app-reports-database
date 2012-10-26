@@ -101,7 +101,9 @@ class Database_Report extends Report_Engine
     const DB_USER = 'reports';
     const DB_NAME = 'reports';
 
-    const CACHE_TIME = 1800; // seconds // FIXME
+    const DEFAULT_CACHE_TIME = 120; // seconds
+    const DEFAULT_RECORDS = 200;
+
     const FILE_CONFIG_DB = '/var/clearos/system_database/reports';
     const PATH_CACHE = '/var/clearos/reports_database/cache';
 
@@ -129,28 +131,75 @@ class Database_Report extends Report_Engine
     ///////////////////////////////////////////////////////////////////////////////
 
     /**
-     * Runs database query.
+     * Runs database insert.
      *
      * @return array table rows
      */
 
-    protected function _run_query($app, $sql, $range, $timespan, $records = 200)
+    protected function _run_insert($app, $sql)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Generate SQL
+        //-------------
+
+        $full_sql = 'INSERT INTO ' . $sql['insert'] . ' VALUES (' . $sql['values'] . ')';
+
+        // Load configuration
+        //-------------------
+
+        if (is_null($this->db_config)) {
+            $file = new Configuration_File(self::FILE_CONFIG_DB, 'explode', '=', 2);
+            $this->db_config = $file->load();
+        }
+
+        // Run query
+        //----------
+
+        try {
+            $dbh = new \PDO(
+                'mysql:host=' . self::DB_HOST . ';port=' . self::DB_PORT . ';dbname=' . self::DB_NAME,
+                self::DB_USER,
+                $this->db_config['password']
+            );
+
+            $dbs = $dbh->prepare($full_sql);
+            $dbs->execute();
+        } catch(\PDOException $e) {  
+            throw new Engine_Exception($e->getMessage());
+        }
+
+        $dbh = NULL;
+    }
+
+    /**
+     * Runs database query.
+     *
+     * Options
+     * - date_range
+     * - records (default: 200)
+     * - cache_time (default: 120 seconds)
+     *
+     * @return array table rows
+     */
+
+    protected function _run_query($app, $sql, $options)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         // Add data range SQL
         //-------------------
 
-        if ($range === Report_Engine::RANGE_TODAY) {
+        if ($options['range'] === Report_Engine::RANGE_TODAY) {
             $date = date('Y-m-d');
             $range = " AND date(timestamp) = '$date'";
-        } else if ($range === Report_Engine::RANGE_YESTERDAY) {
+        } else if ($options['range'] === Report_Engine::RANGE_YESTERDAY) {
             $date = date("Y-m-d", time() - 86400);
             $range = " AND date(timestamp) = '$date'";
-        } else if ($range === Report_Engine::RANGE_LAST_7_DAYS) {
+        } else if ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS) {
             $date = date("Y-m-d", time() - (7*86400));
             $range = " AND date(timestamp) >= '$date'";
-        } else if ($range === Report_Engine::RANGE_LAST_30_DAYS) {
+        } else if ($options['range'] === Report_Engine::RANGE_LAST_30_DAYS) {
             $date = date("Y-m-d", time() - (30*86400));
             $range = " AND date(timestamp) >= '$date'";
         } else {
@@ -160,9 +209,9 @@ class Database_Report extends Report_Engine
         // Add timespan handling
         //----------------------
 
-        if ($timespan === Report_Engine::INTERVAL_DAILY) {
+        if ($options['timespan'] === Report_Engine::INTERVAL_DAILY) {
             $timespan = 'date(timestamp) AS timespan, ';
-        } else if ($timespan === Report_Engine::INTERVAL_HOURLY) {
+        } else if ($options['timespan'] === Report_Engine::INTERVAL_HOURLY) {
             $timespan = 'hour(timestamp) AS timespan, ';
         } else {
             $timespan = '';
@@ -171,15 +220,15 @@ class Database_Report extends Report_Engine
         // Add record limit SQL
         //---------------------
 
-        $limit = (empty($records)) ? '' : " LIMIT $records";
+        $limit = (empty($records)) ? 'LIMIT ' . self::DEFAULT_RECORDS : " LIMIT $records";
 
         // Generate SQL statement
         //-----------------------
 
         $select = 'SELECT ' . $timespan . ' ' . $sql['select'] . ' FROM ' . $sql['from'];
         $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
-        $group_by = 'GROUP BY ' . $sql['group_by'];
-        $order_by = 'ORDER BY ' . $sql['order_by'];
+        $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
+        $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
 
         $full_sql =
             $select . ' ' .
@@ -193,6 +242,7 @@ class Database_Report extends Report_Engine
 
         clearstatcache();
 
+        $cache_time = isset($options['cache_time']) ? $options['cache_time'] : self::DEFAULT_CACHE_TIME;
         $cache_pathname = self::PATH_CACHE . '/' . $app;
         $cache_folder = new Folder($cache_pathname);
 
@@ -205,7 +255,7 @@ class Database_Report extends Report_Engine
         if ($cache->exists()) {
             $stat = stat($cache_filename);
 
-            if ((time() - $stat['ctime']) <= self::CACHE_TIME) {
+            if ((time() - $stat['ctime']) <= $cache_time) {
                 return unserialize($cache->get_contents());
             } else {
                 $cache->delete();
