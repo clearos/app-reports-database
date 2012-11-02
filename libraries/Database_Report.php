@@ -133,6 +133,9 @@ class Database_Report extends Report_Engine
     /**
      * Runs database insert.
      *
+     * @param string $app app identifier
+     * @param string $sql SQL information
+     *
      * @return array table rows
      */
 
@@ -179,6 +182,10 @@ class Database_Report extends Report_Engine
      * - date_range
      * - records (default: 200)
      * - cache_time (default: 120 seconds)
+     *
+     * @param string $app     app identifier
+     * @param string $sql     SQL information
+     * @param array  $options options
      *
      * @return array table rows
      */
@@ -230,12 +237,7 @@ class Database_Report extends Report_Engine
         $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
         $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
 
-        $full_sql =
-            $select . ' ' .
-            $where . ' ' .
-            $group_by . ' ' . 
-            $order_by . ' ' .
-            $limit;
+        $full_sql = $select . ' ' .  $where . ' ' .  $group_by . ' ' .  $order_by . ' ' .  $limit;
 
         // Check cache
         //------------
