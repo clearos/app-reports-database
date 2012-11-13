@@ -102,7 +102,7 @@ class Database_Report extends Report_Engine
     const DB_NAME = 'reports';
 
     const DEFAULT_CACHE_TIME = 120; // seconds
-    const DEFAULT_RECORDS = 200;
+    const DEFAULT_RECORDS = 20000;
 
     const FILE_CONFIG_DB = '/var/clearos/system_database/reports';
     const PATH_CACHE = '/var/clearos/reports_database/cache';
@@ -213,29 +213,87 @@ class Database_Report extends Report_Engine
             $range = '';
         }
 
-        // Add timespan handling
-        //----------------------
-
-        if ($options['timespan'] === Report_Engine::INTERVAL_DAILY) {
-            $timespan = 'date(timestamp) AS timespan, ';
-        } else if ($options['timespan'] === Report_Engine::INTERVAL_HOURLY) {
-            $timespan = 'hour(timestamp) AS timespan, ';
-        } else {
-            $timespan = '';
-        }
-
         // Add record limit SQL
         //---------------------
 
         $limit = (empty($records)) ? 'LIMIT ' . self::DEFAULT_RECORDS : " LIMIT $records";
 
         // Generate SQL statement
-        //-----------------------
+        // - SQL queries using a timeline use a simplified format
+        // - Non-timeline queries use a mostly explicit SQL statement
+        //-----------------------------------------------------------
 
-        $select = 'SELECT ' . $timespan . ' ' . $sql['select'] . ' FROM ' . $sql['from'];
-        $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
-        $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
-        $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
+        if (empty($sql['timeline_select'])) {
+            $select = 'SELECT ' . $sql['select'] . ' FROM ' . $sql['from'];
+            $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
+            $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
+            $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
+        } else {
+            // For timeline queries, an app developer passes in the table columns
+            // and table names... that's it.  The SQL is generated from that information.
+            //
+            // The sample SQL is shown using the following input parameters (Proxy Report)
+            //
+            // $sql['timeline_select'] = array('load_1min', 'load_5min', 'load_15min');
+            // $sql['timeline_from'] = 'resource';
+
+            $select_lines = '';
+
+            // Grab all raw data if less than 24 hours.
+            //
+            // SELECT load_1min, load_5min, load_15min, timestamp 
+            // FROM resource 
+            // WHERE timestamp is NOT NULL AND date(timestamp) = '...' 
+            // ORDER BY timestamp DESC
+            //-------------------------------------------------------------------------
+
+            if (($options['range'] === Report_Engine::RANGE_TODAY) || ($options['range'] === Report_Engine::RANGE_YESTERDAY)) {
+
+                foreach ($sql['timeline_select'] as $selected_entry)
+                    $select_lines .= " $selected_entry,";
+
+                $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(timestamp, \'%Y-%m-%d %H:%i\') as timestamp FROM ' . $sql['timeline_from'];
+                $where = 'WHERE timestamp is NOT NULL ' . $range;
+                $group_by = '';
+                $order_by = 'ORDER BY timestamp DESC';
+
+            // Grab the average over an hour for 7-day data.
+            //
+            // SELECT AVG(load_1min) as load_1min, AVG(load_5min) as load_5min, AVG(load_15min) as load_15min, MIN(timestamp) as timestamp
+            // FROM resource
+            // WHERE timestamp is NOT NULL
+            // GROUP BY DATE(timestamp), HOUR(timestamp)
+            // ORDER BY timestamp DESC 
+            //-------------------------------------------------------------------------
+
+            } else if ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS) {
+                foreach ($sql['timeline_select'] as $selected_entry)
+                    $select_lines .= " AVG($selected_entry) as $selected_entry,";
+
+                $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(MIN(timestamp), \'%Y-%m-%d %H:%i\') as timestamp FROM ' . $sql['timeline_from'];
+                $where = 'WHERE timestamp is NOT NULL ';
+                $group_by = 'GROUP BY DATE(timestamp), HOUR(timestamp)';
+                $order_by = 'ORDER BY timestamp DESC';
+
+            // Grab the average over a full day for 30 days or more.
+            //
+            // SELECT AVG(load_1min) as load_1min, AVG(load_5min) as load_5min, AVG(load_15min) as load_15min, MIN(timestamp) as timestamp
+            // FROM resource
+            // WHERE timestamp is NOT NULL
+            // GROUP BY DATE(timestamp) 
+            // ORDER BY timestamp DESC 
+            //-------------------------------------------------------------------------
+
+            } else {
+                foreach ($sql['timeline_select'] as $selected_entry)
+                    $select_lines .= " AVG($selected_entry) as $selected_entry,";
+
+                $select = 'SELECT ' . $select_lines . ' DATE(MIN(timestamp)) as timestamp FROM ' . $sql['timeline_from'];
+                $where = 'WHERE timestamp is NOT NULL ';
+                $group_by = 'GROUP BY DATE(timestamp)';
+                $order_by = 'ORDER BY timestamp DESC';
+            }
+        }
 
         $full_sql = $select . ' ' .  $where . ' ' .  $group_by . ' ' .  $order_by . ' ' .  $limit;
 
