@@ -102,7 +102,7 @@ class Database_Report extends Report_Engine
     const DB_NAME = 'reports';
 
     const DEFAULT_CACHE_TIME = 120; // seconds
-    const DEFAULT_RECORDS = 20000;
+    const DEFAULT_RECORDS = 400;
 
     const FILE_CONFIG_DB = '/var/clearos/system_database/reports';
     const PATH_CACHE = '/var/clearos/reports_database/cache';
@@ -111,7 +111,7 @@ class Database_Report extends Report_Engine
     // V A R I A B L E S
     ///////////////////////////////////////////////////////////////////////////////
 
-    protected $db_config = NULL;
+    protected $db_handle = NULL;
 
     ///////////////////////////////////////////////////////////////////////////////
     // M E T H O D S
@@ -131,6 +131,93 @@ class Database_Report extends Report_Engine
     ///////////////////////////////////////////////////////////////////////////////
 
     /**
+     * Creates a temporary table.
+     */
+
+    protected function _create_temporary_table($app, $sql, $options = array())
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Add data range SQL
+        //-------------------
+
+        if ($options['range'] === Report_Engine::RANGE_TODAY) {
+            $date = date('Y-m-d');
+            $range = " AND date(timestamp) = '$date'";
+        } else if ($options['range'] === Report_Engine::RANGE_YESTERDAY) {
+            $date = date("Y-m-d", time() - 86400);
+            $range = " AND date(timestamp) = '$date'";
+        } else if ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS) {
+            $date = date("Y-m-d", time() - (7*86400));
+            $range = " AND date(timestamp) >= '$date'";
+        } else if ($options['range'] === Report_Engine::RANGE_LAST_30_DAYS) {
+            $date = date("Y-m-d", time() - (30*86400));
+            $range = " AND date(timestamp) >= '$date'";
+        } else {
+            $range = '';
+        }
+
+        // Create table
+        //--------------
+
+        $this->_get_db_handle();
+
+        $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
+        $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
+
+        $full_sql = 
+            'CREATE TEMPORARY TABLE ' . $sql['table'] . ' ' .
+            'SELECT ' . $sql['select'] . ' ' .
+            'FROM ' . $sql['from'] . ' ' .
+            'WHERE ' .  $sql['where'] . ' ' . $range . ' ' .
+            $group_by . ' ' .
+            $order_by;
+
+        clearos_log('reports_database', $full_sql); // FIXME: debug
+
+        // Run query
+        //----------
+
+        try {
+            $dbs = $this->db_handle->prepare($full_sql);
+            $dbs->execute();
+        } catch(\PDOException $e) {  
+            throw new Engine_Exception($e->getMessage());
+        }
+    }
+
+    /**
+     * Creates a temporary table.
+     */
+
+    protected function _get_db_handle()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        if (! is_null($this->db_handle))
+            return;
+
+        // Get database configuration
+        //---------------------------
+
+        $file = new Configuration_File(self::FILE_CONFIG_DB, 'explode', '=', 2);
+        $db_config = $file->load();
+
+        // Get a connection
+        //-----------------
+
+        try {
+            $this->db_handle = new \PDO(
+                'mysql:host=' . self::DB_HOST . ';port=' . self::DB_PORT . ';dbname=' . self::DB_NAME,
+                self::DB_USER,
+                $db_config['password']
+            );
+        } catch(\PDOException $e) {  
+            throw new Engine_Exception($e->getMessage());
+        }
+    }
+
+    /**
      * Runs database insert.
      *
      * @param string $app app identifier
@@ -148,31 +235,20 @@ class Database_Report extends Report_Engine
 
         $full_sql = 'INSERT INTO ' . $sql['insert'] . ' VALUES (' . $sql['values'] . ')';
 
-        // Load configuration
-        //-------------------
+        // Get database handle
+        //--------------------
 
-        if (is_null($this->db_config)) {
-            $file = new Configuration_File(self::FILE_CONFIG_DB, 'explode', '=', 2);
-            $this->db_config = $file->load();
-        }
+        $this->_get_db_handle();
 
         // Run query
         //----------
 
         try {
-            $dbh = new \PDO(
-                'mysql:host=' . self::DB_HOST . ';port=' . self::DB_PORT . ';dbname=' . self::DB_NAME,
-                self::DB_USER,
-                $this->db_config['password']
-            );
-
-            $dbs = $dbh->prepare($full_sql);
+            $dbs = $this->db_handle->prepare($full_sql);
             $dbs->execute();
         } catch(\PDOException $e) {  
             throw new Engine_Exception($e->getMessage());
         }
-
-        $dbh = NULL;
     }
 
     /**
@@ -225,7 +301,12 @@ class Database_Report extends Report_Engine
 
         if (empty($sql['timeline_select'])) {
             $select = 'SELECT ' . $sql['select'] . ' FROM ' . $sql['from'];
-            $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
+
+            if (! empty($sql['where']))
+                $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
+            else if (! empty($sql['left_join']))
+                $where = 'LEFT JOIN ' . $sql['left_join'];
+
             $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
             $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
         } else {
@@ -297,6 +378,8 @@ class Database_Report extends Report_Engine
 
         $full_sql = $select . ' ' .  $where . ' ' .  $group_by . ' ' .  $order_by . ' ' .  $limit;
 
+        clearos_log('reports_database', $full_sql); // FIXME: debug
+
         // Check cache
         //------------
 
@@ -322,25 +405,16 @@ class Database_Report extends Report_Engine
             }
         }
 
-        // Load configuration
-        //-------------------
+        // Get database handle
+        //--------------------
 
-        if (is_null($this->db_config)) {
-            $file = new Configuration_File(self::FILE_CONFIG_DB, 'explode', '=', 2);
-            $this->db_config = $file->load();
-        }
+        $this->_get_db_handle();
 
         // Run query
         //----------
 
         try {
-            $dbh = new \PDO(
-                'mysql:host=' . self::DB_HOST . ';port=' . self::DB_PORT . ';dbname=' . self::DB_NAME,
-                self::DB_USER,
-                $this->db_config['password']
-            );
-
-            $dbs = $dbh->prepare($full_sql);
+            $dbs = $this->db_handle->prepare($full_sql);
             $dbs->execute();
             $rows = array();
 
@@ -349,8 +423,6 @@ class Database_Report extends Report_Engine
         } catch(\PDOException $e) {  
             throw new Engine_Exception($e->getMessage());
         }
-
-        $dbh = NULL;
 
         // Handle cache
         //-------------
