@@ -171,7 +171,7 @@ class Database_Report extends Report_Engine
             'FROM ' . $sql['from'] . ' ' .
             'WHERE ' .  $sql['where'] . ' ' . $range . ' ' .
             $group_by . ' ' .
-            $order_by;
+            $order_by . ';';
 
         clearos_log('reports_database', $full_sql); // FIXME: debug
 
@@ -233,7 +233,7 @@ class Database_Report extends Report_Engine
         // Generate SQL
         //-------------
 
-        $full_sql = 'INSERT INTO ' . $sql['insert'] . ' VALUES (' . $sql['values'] . ')';
+        $full_sql = 'INSERT INTO ' . $sql['insert'] . ' VALUES (' . $sql['values'] . ');';
 
         // Get database handle
         //--------------------
@@ -304,8 +304,8 @@ class Database_Report extends Report_Engine
 
             if (! empty($sql['where']))
                 $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
-            else if (! empty($sql['left_join']))
-                $where = 'LEFT JOIN ' . $sql['left_join'];
+            else if (! empty($sql['joins']))
+                $where = ' ' . $sql['joins'] . ' ';
 
             $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
             $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
@@ -376,7 +376,7 @@ class Database_Report extends Report_Engine
             }
         }
 
-        $full_sql = $select . ' ' .  $where . ' ' .  $group_by . ' ' .  $order_by . ' ' .  $limit;
+        $full_sql = $select . ' ' .  $where . ' ' .  $group_by . ' ' .  $order_by . ' ' .  $limit . ';';
 
         clearos_log('reports_database', $full_sql); // FIXME: debug
 
