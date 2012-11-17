@@ -169,7 +169,7 @@ class Database_Report extends Report_Engine
             'CREATE TEMPORARY TABLE ' . $sql['table'] . ' ' .
             'SELECT ' . $sql['select'] . ' ' .
             'FROM ' . $sql['from'] . ' ' .
-            'WHERE ' .  $sql['where'] . ' ' . $range . ' ' .
+            'WHERE (' .  $sql['where'] . ') ' . $range . ' ' .
             $group_by . ' ' .
             $order_by . ';';
 
@@ -303,7 +303,7 @@ class Database_Report extends Report_Engine
             $select = 'SELECT ' . $sql['select'] . ' FROM ' . $sql['from'];
 
             if (! empty($sql['where']))
-                $where = 'WHERE ' .  $sql['where'] . ' ' . $range;
+                $where = 'WHERE (' .  $sql['where'] . ') ' . $range;
             else if (! empty($sql['joins']))
                 $where = ' ' . $sql['joins'] . ' ';
 
@@ -352,7 +352,7 @@ class Database_Report extends Report_Engine
                     $select_lines .= " AVG($selected_entry) as $selected_entry,";
 
                 $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(MIN(timestamp), \'%Y-%m-%d %H:%i\') as timestamp FROM ' . $sql['timeline_from'];
-                $where = 'WHERE timestamp is NOT NULL ';
+                $where = 'WHERE timestamp is NOT NULL ' . $range;
                 $group_by = 'GROUP BY DATE(timestamp), HOUR(timestamp)';
                 $order_by = 'ORDER BY timestamp DESC';
 
@@ -370,7 +370,7 @@ class Database_Report extends Report_Engine
                     $select_lines .= " AVG($selected_entry) as $selected_entry,";
 
                 $select = 'SELECT ' . $select_lines . ' DATE(MIN(timestamp)) as timestamp FROM ' . $sql['timeline_from'];
-                $where = 'WHERE timestamp is NOT NULL ';
+                $where = 'WHERE timestamp is NOT NULL ' . $range;
                 $group_by = 'GROUP BY DATE(timestamp)';
                 $order_by = 'ORDER BY timestamp DESC';
             }
