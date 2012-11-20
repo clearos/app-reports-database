@@ -334,7 +334,12 @@ class Database_Report extends Report_Engine
                     $select_lines .= " $selected_entry,";
 
                 $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(timestamp, \'%Y-%m-%d %H:%i\') as timestamp FROM ' . $sql['timeline_from'];
-                $where = 'WHERE timestamp is NOT NULL ' . $range;
+
+                if (! empty($sql['timeline_where']))
+                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $range;
+                else
+                    $where = 'WHERE timestamp is NOT NULL ' . $range;
+
                 $group_by = '';
                 $order_by = 'ORDER BY timestamp DESC';
 
@@ -352,7 +357,12 @@ class Database_Report extends Report_Engine
                     $select_lines .= " AVG($selected_entry) as $selected_entry,";
 
                 $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(MIN(timestamp), \'%Y-%m-%d %H:%i\') as timestamp FROM ' . $sql['timeline_from'];
-                $where = 'WHERE timestamp is NOT NULL ' . $range;
+
+                if (! empty($sql['timeline_where']))
+                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $range;
+                else
+                    $where = 'WHERE timestamp is NOT NULL ' . $range;
+
                 $group_by = 'GROUP BY DATE(timestamp), HOUR(timestamp)';
                 $order_by = 'ORDER BY timestamp DESC';
 
@@ -370,7 +380,11 @@ class Database_Report extends Report_Engine
                     $select_lines .= " AVG($selected_entry) as $selected_entry,";
 
                 $select = 'SELECT ' . $select_lines . ' DATE(MIN(timestamp)) as timestamp FROM ' . $sql['timeline_from'];
-                $where = 'WHERE timestamp is NOT NULL ' . $range;
+                if (! empty($sql['timeline_where']))
+                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $range;
+                else
+                    $where = 'WHERE timestamp is NOT NULL ' . $range;
+
                 $group_by = 'GROUP BY DATE(timestamp)';
                 $order_by = 'ORDER BY timestamp DESC';
             }
