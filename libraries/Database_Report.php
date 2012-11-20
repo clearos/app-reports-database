@@ -101,7 +101,7 @@ class Database_Report extends Report_Engine
     const DB_USER = 'reports';
     const DB_NAME = 'reports';
 
-    const DEFAULT_CACHE_TIME = 120; // seconds
+    const DEFAULT_CACHE_TIME = 300; // seconds
     const DEFAULT_RECORDS = 400;
 
     const FILE_CONFIG_DB = '/var/clearos/system_database/reports';
