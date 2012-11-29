@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# FIXME: remove for 6.4 release (due to clearsync restart in app-base... which should also be changed)
+/usr/sbin/syncaction base webconfig_change_event
