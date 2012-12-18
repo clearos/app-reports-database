@@ -1,9 +1,11 @@
 #!/bin/sh
 
-APP_DB=$1
-APP_DB_TABLES=$2
+APP_NAME=$1
 
-if [ -n "$3" ]; then
+APP_DB=`echo $APP_NAME | sed 's/_report//'`
+APP_DB_TABLES="/usr/clearos/apps/$1/deploy/db_tables.sql"
+
+if [ "$2" == "yes" ]; then
     FORCE="yes"
 else
     FORCE=""
@@ -15,7 +17,7 @@ DB_CONFIG="/var/clearos/system_database/root"
 # Start system database
 #----------------------
 
-/usr/clearos/apps/system_database/deploy/bootstrap
+/usr/clearos/apps/reports_database/deploy/initialize-database
 
 # Grab root database password
 #----------------------------
@@ -33,6 +35,9 @@ fi
 TABLE_EXISTS=`$MYSQL -uroot -p"$ROOTPASS" -e 'show tables;' reports 2>/dev/null | grep $APP_DB`
 
 if ( [ -z "$TABLE_EXISTS" ] || [ -n "$FORCE" ] ); then
-    logger -p local6.notice -t installer "app-reports-database-core - creating tables for $APP_DB"
+    echo "creating tables for $APP_NAME"
+    logger -p local6.notice -t installer "app-reports-database-core - creating tables for $APP_NAME"
     $MYSQL -uroot -p"$ROOTPASS" reports < $APP_DB_TABLES
+else
+    echo "tables already exist for $APP_NAME"
 fi
