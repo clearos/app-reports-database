@@ -1,7 +1,7 @@
 
 Name: app-reports-database
 Epoch: 1
-Version: 1.4.6
+Version: 1.4.8
 Release: 1%{dist}
 Summary: Reports Database - Core
 License: LGPLv3
