@@ -1,7 +1,7 @@
 
 Name: app-reports-database
 Epoch: 1
-Version: 1.4.9
+Version: 1.4.10
 Release: 1%{dist}
 Summary: Reports Database - Core
 License: LGPLv3
@@ -15,6 +15,7 @@ The Reports Database provides a common set of tools for managing database-driven
 %package core
 Summary: Reports Database - Core
 Requires: app-base-core
+Requires: app-base-core >= 1:1.4.9
 Requires: app-reports
 Requires: app-system-database-core >= 1:1.2.4
 Requires: webconfig-php-mysql
