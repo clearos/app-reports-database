@@ -1,7 +1,7 @@
 
 Name: app-reports-database
 Epoch: 1
-Version: 1.4.10
+Version: 1.4.11
 Release: 1%{dist}
 Summary: Reports Database - Core
 License: LGPLv3
@@ -18,6 +18,7 @@ Requires: app-base-core
 Requires: app-base-core >= 1:1.4.9
 Requires: app-reports
 Requires: app-system-database-core >= 1:1.2.4
+Requires: cronie
 Requires: webconfig-php-mysql
 
 %description core

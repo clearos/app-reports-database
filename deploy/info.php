@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'reports_database';
-$app['version'] = '1.4.10';
+$app['version'] = '1.4.11';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -28,10 +28,12 @@ $app['menu_enabled'] = FALSE;
 
 $app['core_only'] = TRUE;
 
+// TODO: remove cronie after cron workaround is no longer needed
 $app['core_requires'] = array(
     'app-base-core >= 1:1.4.9',
     'app-reports',
     'app-system-database-core >= 1:1.2.4',
+    'cronie',
     'webconfig-php-mysql',
 );
 
