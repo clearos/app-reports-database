@@ -7,7 +7,7 @@
  * @package    Reports_Database
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2012 ClearFoundation
+ * @copyright  2012-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/reports_database/
  */
@@ -85,7 +85,7 @@ clearos_load_library('base/Engine_Exception');
  * @package    Reports_Database
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2012 ClearFoundation
+ * @copyright  2012-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/reports_database/
  */
@@ -132,6 +132,12 @@ class Database_Report extends Report_Engine
 
     /**
      * Creates a temporary table.
+     *
+     * @param string $app     app name
+     * @param string $sql     SQL
+     * @param array  $options $options array
+     *
+     * @return void
      */
 
     protected function _create_temporary_table($app, $sql, $options = array())
@@ -165,8 +171,7 @@ class Database_Report extends Report_Engine
         $group_by = (!empty($sql['group_by'])) ? 'GROUP BY ' . $sql['group_by'] : '';
         $order_by = (!empty($sql['order_by'])) ? 'ORDER BY ' . $sql['order_by'] : '';
 
-        $full_sql = 
-            'CREATE TEMPORARY TABLE ' . $sql['table'] . ' ' .
+        $full_sql = 'CREATE TEMPORARY TABLE ' . $sql['table'] . ' ' .
             'SELECT ' . $sql['select'] . ' ' .
             'FROM ' . $sql['from'] . ' ' .
             'WHERE (' .  $sql['where'] . ') ' . $range . ' ' .
@@ -188,6 +193,8 @@ class Database_Report extends Report_Engine
 
     /**
      * Creates a temporary table.
+     *
+     * @return void
      */
 
     protected function _get_db_handle()
@@ -343,14 +350,14 @@ class Database_Report extends Report_Engine
                 $group_by = '';
                 $order_by = 'ORDER BY timestamp DESC';
 
-            // Grab the average over an hour for 7-day data.
-            //
-            // SELECT AVG(load_1min) as load_1min, AVG(load_5min) as load_5min, AVG(load_15min) as load_15min, MIN(timestamp) as timestamp
-            // FROM resource
-            // WHERE timestamp is NOT NULL
-            // GROUP BY DATE(timestamp), HOUR(timestamp)
-            // ORDER BY timestamp DESC 
-            //-------------------------------------------------------------------------
+                // Grab the average over an hour for 7-day data.
+                //
+                // SELECT AVG(load_1min) as load_1min, AVG(load_5min) as load_5min, AVG(load_15min) as load_15min, MIN(timestamp) as timestamp
+                // FROM resource
+                // WHERE timestamp is NOT NULL
+                // GROUP BY DATE(timestamp), HOUR(timestamp)
+                // ORDER BY timestamp DESC 
+                //-------------------------------------------------------------------------
 
             } else if ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS) {
                 foreach ($sql['timeline_select'] as $selected_entry)
@@ -366,14 +373,14 @@ class Database_Report extends Report_Engine
                 $group_by = 'GROUP BY DATE(timestamp), HOUR(timestamp)';
                 $order_by = 'ORDER BY timestamp DESC';
 
-            // Grab the average over a full day for 30 days or more.
-            //
-            // SELECT AVG(load_1min) as load_1min, AVG(load_5min) as load_5min, AVG(load_15min) as load_15min, MIN(timestamp) as timestamp
-            // FROM resource
-            // WHERE timestamp is NOT NULL
-            // GROUP BY DATE(timestamp) 
-            // ORDER BY timestamp DESC 
-            //-------------------------------------------------------------------------
+                // Grab the average over a full day for 30 days or more.
+                //
+                // SELECT AVG(load_1min) as load_1min, AVG(load_5min) as load_5min, AVG(load_15min) as load_15min, MIN(timestamp) as timestamp
+                // FROM resource
+                // WHERE timestamp is NOT NULL
+                // GROUP BY DATE(timestamp) 
+                // ORDER BY timestamp DESC 
+                //-------------------------------------------------------------------------
 
             } else {
                 foreach ($sql['timeline_select'] as $selected_entry)
