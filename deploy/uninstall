@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -d /var/clearos/reports_database/cache ]; then
+    logger -p local6.notice -t installer "app-reports-database-core - removing cache files"
+    rm -rf /var/clearos/reports_database/cache/*
+fi
