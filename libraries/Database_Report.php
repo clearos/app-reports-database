@@ -56,15 +56,15 @@ clearos_load_language('reports_database');
 //--------
 
 use \clearos\apps\base\Configuration_File as Configuration_File;
-use \clearos\apps\base\Engine as Engine;
 use \clearos\apps\base\File as File;
 use \clearos\apps\base\Folder as Folder;
+use \clearos\apps\base\Shell as Shell;
 use \clearos\apps\reports\Report_Engine as Report_Engine;
 
 clearos_load_library('base/Configuration_File');
-clearos_load_library('base/Engine');
 clearos_load_library('base/File');
 clearos_load_library('base/Folder');
+clearos_load_library('base/Shell');
 clearos_load_library('reports/Report_Engine');
 
 // Exceptions
@@ -106,6 +106,7 @@ class Database_Report extends Report_Engine
 
     const FILE_CONFIG_DB = '/var/clearos/system_database/reports';
     const PATH_CACHE = '/var/clearos/reports_database/cache';
+    const COMMAND_INIT_TABLES = '/usr/sbin/initialize-report-tables';
 
     ///////////////////////////////////////////////////////////////////////////////
     // V A R I A B L E S
@@ -222,6 +223,47 @@ class Database_Report extends Report_Engine
         } catch(\PDOException $e) {  
             throw new Engine_Exception($e->getMessage());
         }
+    }
+
+    /**
+     * Initializes database.
+     *
+     * @param string $app_name app name
+     *
+     * @return void
+     */
+
+    protected function _initialize_tables($app_name, $test_table)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Check initialization
+        //---------------------
+
+        try {
+            $this->_get_db_handle();
+
+            $dbs = $this->db_handle->prepare("SELECT * FROM $test_table LIMIT 1");
+            $dbs->execute();
+            $rows = array();
+
+            while ($row = $dbs->fetch())
+                $rows[] = $row;
+
+            if (! empty($rows))
+                return;
+        } catch(\PDOException $e) {  
+            clearos_log('reports_database', 'waiting to initialize report: ' . $app_name);
+            return;
+        }
+
+        // Run init script
+        //----------------
+
+        $options['validate_exit_code'] = FALSE;
+
+        $shell = new Shell();
+        $retval = $shell->execute(self::COMMAND_INIT_TABLES, $app_name, TRUE, $options);
     }
 
     /**

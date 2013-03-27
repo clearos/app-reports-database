@@ -1,5 +1,13 @@
 #!/bin/sh
 
+# Sudoers
+#--------
+
+/usr/sbin/addsudo /usr/sbin/initialize-report-tables app-reports-database-core
+
+# Bootstrap
+#----------
+
 logger -p local6.notice -t installer "app-reports-database-core - initializing reports database"
 /usr/clearos/apps/reports_database/deploy/initialize-database >/dev/null 2>&1
 
