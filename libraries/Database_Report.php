@@ -3,9 +3,9 @@
 /**
  * Database report base class.
  *
- * @category   Apps
- * @package    Reports_Database
- * @subpackage Libraries
+ * @category   apps
+ * @package    reports-database
+ * @subpackage libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
@@ -81,9 +81,9 @@ clearos_load_library('base/Engine_Exception');
 /**
  * Database report base class.
  *
- * @category   Apps
- * @package    Reports_Database
- * @subpackage Libraries
+ * @category   apps
+ * @package    reports-database
+ * @subpackage libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2012-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
