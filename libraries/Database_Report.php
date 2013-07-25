@@ -113,6 +113,7 @@ class Database_Report extends Report_Engine
     ///////////////////////////////////////////////////////////////////////////////
 
     protected $db_handle = NULL;
+    protected $timestamp_field = 'timestamp';
 
     ///////////////////////////////////////////////////////////////////////////////
     // M E T H O D S
@@ -122,9 +123,12 @@ class Database_Report extends Report_Engine
      * Database report constructor.
      */
 
-    public function __construct()
+    public function __construct($options = NULL)
     {
         clearos_profile(__METHOD__, __LINE__);
+
+        if (isset($options['timestamp_field']))
+            $this->timestamp_field = $options['timestamp_field'];
     }
 
     ///////////////////////////////////////////////////////////////////////////////
@@ -148,20 +152,22 @@ class Database_Report extends Report_Engine
         // Add data range SQL
         //-------------------
 
-        if ($options['range'] === Report_Engine::RANGE_TODAY) {
+        if (empty($options['range'])) {
+            $sql_range = '';
+        } else if ($options['range'] === Report_Engine::RANGE_TODAY) {
             $date = date('Y-m-d');
-            $range = " AND date(timestamp) = '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") = '$date'";
         } else if ($options['range'] === Report_Engine::RANGE_YESTERDAY) {
             $date = date("Y-m-d", time() - 86400);
-            $range = " AND date(timestamp) = '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") = '$date'";
         } else if ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS) {
             $date = date("Y-m-d", time() - (7*86400));
-            $range = " AND date(timestamp) >= '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") >= '$date'";
         } else if ($options['range'] === Report_Engine::RANGE_LAST_30_DAYS) {
             $date = date("Y-m-d", time() - (30*86400));
-            $range = " AND date(timestamp) >= '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") >= '$date'";
         } else {
-            $range = '';
+            $sql_range = '';
         }
 
         // Create table
@@ -175,7 +181,7 @@ class Database_Report extends Report_Engine
         $full_sql = 'CREATE TEMPORARY TABLE ' . $sql['table'] . ' ' .
             'SELECT ' . $sql['select'] . ' ' .
             'FROM ' . $sql['from'] . ' ' .
-            'WHERE (' .  $sql['where'] . ') ' . $range . ' ' .
+            'WHERE (' .  $sql['where'] . ') ' . $sql_range . ' ' .
             $group_by . ' ' .
             $order_by . ';';
 
@@ -315,27 +321,29 @@ class Database_Report extends Report_Engine
      * @return array table rows
      */
 
-    protected function _run_query($app, $sql, $options)
+    protected function _run_query($app, $sql, $options = NULL)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         // Add data range SQL
         //-------------------
 
-        if ($options['range'] === Report_Engine::RANGE_TODAY) {
+        if (empty($options['range'])) {
+            $sql_range = '';
+        } else if ($options['range'] === Report_Engine::RANGE_TODAY) {
             $date = date('Y-m-d');
-            $range = " AND date(timestamp) = '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") = '$date'";
         } else if ($options['range'] === Report_Engine::RANGE_YESTERDAY) {
             $date = date("Y-m-d", time() - 86400);
-            $range = " AND date(timestamp) = '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") = '$date'";
         } else if ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS) {
             $date = date("Y-m-d", time() - (7*86400));
-            $range = " AND date(timestamp) >= '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") >= '$date'";
         } else if ($options['range'] === Report_Engine::RANGE_LAST_30_DAYS) {
             $date = date("Y-m-d", time() - (30*86400));
-            $range = " AND date(timestamp) >= '$date'";
+            $sql_range = " AND date(" . $this->timestamp_field . ") >= '$date'";
         } else {
-            $range = '';
+            $sql_range = '';
         }
 
         // Add record limit SQL
@@ -352,7 +360,7 @@ class Database_Report extends Report_Engine
             $select = 'SELECT ' . $sql['select'] . ' FROM ' . $sql['from'];
 
             if (! empty($sql['where']))
-                $where = 'WHERE (' .  $sql['where'] . ') ' . $range;
+                $where = 'WHERE (' .  $sql['where'] . ') ' . $sql_range;
             else if (! empty($sql['joins']))
                 $where = ' ' . $sql['joins'] . ' ';
 
@@ -377,20 +385,20 @@ class Database_Report extends Report_Engine
             // ORDER BY timestamp DESC
             //-------------------------------------------------------------------------
 
-            if (($options['range'] === Report_Engine::RANGE_TODAY) || ($options['range'] === Report_Engine::RANGE_YESTERDAY)) {
+            if (isset($options['range']) && (($options['range'] === Report_Engine::RANGE_TODAY) || ($options['range'] === Report_Engine::RANGE_YESTERDAY))) {
 
                 foreach ($sql['timeline_select'] as $selected_entry)
                     $select_lines .= " $selected_entry,";
 
-                $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(timestamp, \'%Y-%m-%d %H:%i\') as timestamp FROM ' . $sql['timeline_from'];
+                $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(' . $this->timestamp_field . ', \'%Y-%m-%d %H:%i\') as ' . $this->timestamp_field . ' FROM ' . $sql['timeline_from'];
 
                 if (! empty($sql['timeline_where']))
-                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $range;
+                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $sql_range;
                 else
-                    $where = 'WHERE timestamp is NOT NULL ' . $range;
+                    $where = 'WHERE ' . $this->timestamp_field . ' is NOT NULL ' . $sql_range;
 
                 $group_by = '';
-                $order_by = 'ORDER BY timestamp DESC';
+                $order_by = 'ORDER BY ' . $this->timestamp_field . ' DESC';
 
                 // Grab the average over an hour for 7-day data.
                 //
@@ -401,19 +409,19 @@ class Database_Report extends Report_Engine
                 // ORDER BY timestamp DESC 
                 //-------------------------------------------------------------------------
 
-            } else if ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS) {
+            } else if (isset($options['range']) && ($options['range'] === Report_Engine::RANGE_LAST_7_DAYS)) {
                 foreach ($sql['timeline_select'] as $selected_entry)
                     $select_lines .= " AVG($selected_entry) as $selected_entry,";
 
-                $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(MIN(timestamp), \'%Y-%m-%d %H:%i\') as timestamp FROM ' . $sql['timeline_from'];
+                $select = 'SELECT ' . $select_lines . ' DATE_FORMAT(MIN(' . $this->timestamp_field . '), \'%Y-%m-%d %H:%i\') as ' . $this->timestamp_field . ' FROM ' . $sql['timeline_from'];
 
                 if (! empty($sql['timeline_where']))
-                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $range;
+                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $sql_range;
                 else
-                    $where = 'WHERE timestamp is NOT NULL ' . $range;
+                    $where = 'WHERE ' . $this->timestamp_field . ' is NOT NULL ' . $sql_range;
 
-                $group_by = 'GROUP BY DATE(timestamp), HOUR(timestamp)';
-                $order_by = 'ORDER BY timestamp DESC';
+                $group_by = 'GROUP BY DATE(' . $this->timestamp_field . '), HOUR(' . $this->timestamp_field . ')';
+                $order_by = 'ORDER BY ' . $this->timestamp_field . ' DESC';
 
                 // Grab the average over a full day for 30 days or more.
                 //
@@ -428,14 +436,14 @@ class Database_Report extends Report_Engine
                 foreach ($sql['timeline_select'] as $selected_entry)
                     $select_lines .= " AVG($selected_entry) as $selected_entry,";
 
-                $select = 'SELECT ' . $select_lines . ' DATE(MIN(timestamp)) as timestamp FROM ' . $sql['timeline_from'];
+                $select = 'SELECT ' . $select_lines . ' DATE(MIN(' . $this->timestamp_field . ')) as ' . $this->timestamp_field . ' FROM ' . $sql['timeline_from'];
                 if (! empty($sql['timeline_where']))
-                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $range;
+                    $where = 'WHERE (' .  $sql['timeline_where'] . ') ' . $sql_range;
                 else
-                    $where = 'WHERE timestamp is NOT NULL ' . $range;
+                    $where = 'WHERE ' . $this->timestamp_field . ' is NOT NULL ' . $sql_range;
 
-                $group_by = 'GROUP BY DATE(timestamp)';
-                $order_by = 'ORDER BY timestamp DESC';
+                $group_by = 'GROUP BY DATE(' . $this->timestamp_field . ')';
+                $order_by = 'ORDER BY ' . $this->timestamp_field .' DESC';
             }
         }
 
@@ -455,7 +463,7 @@ class Database_Report extends Report_Engine
         if (! $cache_folder->exists())
             $cache_folder->create('root', 'root', '0755');
 
-        $cache_filename = $cache_pathname . '/' . md5($full_sql);
+        $cache_filename = $cache_pathname . '/' . md5($full_sql . $sql_range);
         $cache = new File($cache_filename);
 
         if ($cache->exists()) {
@@ -496,5 +504,39 @@ class Database_Report extends Report_Engine
         }
 
         return $rows;
+    }
+
+    /**
+     * Runs database update
+     *
+     * @param string $app app identifier
+     * @param string $sql SQL information
+     *
+     * @return array table rows
+     */
+
+    protected function _run_update($app, $sql)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Generate SQL
+        //-------------
+
+        $full_sql = 'UPDATE ' . $sql['table'] . ' SET ' . $sql['set'] . ' WHERE ' . $sql['where'];
+
+        // Get database handle
+        //--------------------
+
+        $this->_get_db_handle();
+
+        // Run query
+        //----------
+
+        try {
+            $dbs = $this->db_handle->prepare($full_sql);
+            $dbs->execute();
+        } catch(\PDOException $e) {  
+            throw new Engine_Exception($e->getMessage());
+        }
     }
 }
