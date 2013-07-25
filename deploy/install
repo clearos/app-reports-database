@@ -1,5 +1,0 @@
-#!/bin/sh
-
-# FIXME: remove for 6.4 release (due to clearsync restart in app-base... which should also be changed)
-echo "* * * * * root  /usr/clearos/apps/reports_database/deploy/fix-mysql-extension" > /etc/cron.d/fix-mysql-extension
-
