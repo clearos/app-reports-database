@@ -131,6 +131,23 @@ class Database_Report extends Report_Engine
             $this->timestamp_field = $options['timestamp_field'];
     }
 
+    /**
+     * Returns reports database password.
+     *
+     * @return string reports database password
+     * @throws Engine_Exception
+     */
+
+    public function get_password()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $file = new Configuration_File(self::FILE_CONFIG_DB, 'explode', '=', 2);
+        $db_config = $file->load();
+
+        return $db_config['password'];
+    }
+
     ///////////////////////////////////////////////////////////////////////////////
     // P R I V A T E   M E T H O D S
     ///////////////////////////////////////////////////////////////////////////////
