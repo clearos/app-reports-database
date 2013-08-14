@@ -473,6 +473,7 @@ class Database_Report extends Report_Engine
 
         clearstatcache();
 
+        $cache_id = isset($options['cache_id']) ? $options['cache_id'] : '';
         $cache_time = isset($options['cache_time']) ? $options['cache_time'] : self::DEFAULT_CACHE_TIME;
         $cache_pathname = self::PATH_CACHE . '/' . $app;
         $cache_folder = new Folder($cache_pathname);
@@ -480,7 +481,7 @@ class Database_Report extends Report_Engine
         if (! $cache_folder->exists())
             $cache_folder->create('root', 'root', '0755');
 
-        $cache_filename = $cache_pathname . '/' . md5($full_sql . $sql_range);
+        $cache_filename = $cache_pathname . '/' . md5($full_sql . $sql_range . $cache_id);
         $cache = new File($cache_filename);
 
         if ($cache->exists()) {
