@@ -32,7 +32,7 @@ fi
 # Create tables (if necessary)
 #-----------------------------
 
-TABLE_EXISTS=`$MYSQL -uroot -p"$ROOTPASS" -e 'show tables;' reports 2>/dev/null | grep $APP_DB`
+TABLE_EXISTS=`$MYSQL -uroot -p"$ROOTPASS" -e 'show tables;' reports 2>/dev/null | grep ^$APP_DB$`
 
 if ( [ -z "$TABLE_EXISTS" ] || [ -n "$FORCE" ] ); then
     echo "creating tables for $APP_NAME"
