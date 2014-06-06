@@ -28,12 +28,10 @@ $app['menu_enabled'] = FALSE;
 
 $app['core_only'] = TRUE;
 
-// TODO: remove cronie after cron workaround is no longer needed
 $app['core_requires'] = array(
     'app-base-core >= 1:1.4.9',
     'app-reports',
     'app-system-database-core >= 1:1.2.4',
-    'cronie',
     'webconfig-php-mysql',
 );
 

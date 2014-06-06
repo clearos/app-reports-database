@@ -1,6 +1,0 @@
-#!/bin/sh
-
-logger -p local6.notice -t installer "app-reports-database-core - forcing PHP MySQL reload"
-/usr/sbin/syncaction base webconfig_change_event
-
-rm -f /etc/cron.d/fix-mysql-extension

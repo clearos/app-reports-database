@@ -18,7 +18,6 @@ Requires: app-base-core
 Requires: app-base-core >= 1:1.4.9
 Requires: app-reports
 Requires: app-system-database-core >= 1:1.2.4
-Requires: cronie
 Requires: webconfig-php-mysql
 
 %description core
@@ -60,7 +59,6 @@ exit 0
 %files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/reports_database/packaging
-%exclude /usr/clearos/apps/reports_database/tests
 %dir /usr/clearos/apps/reports_database
 %dir /var/clearos/reports_database
 %dir /var/clearos/reports_database/cache
