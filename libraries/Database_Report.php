@@ -202,7 +202,8 @@ class Database_Report extends Report_Engine
             $group_by . ' ' .
             $order_by . ';';
 
-        // clearos_log('reports_database', $full_sql);
+        if (clearos_is_debug())
+            clearos_log('reports_database', $full_sql);
 
         // Run query
         //----------
@@ -466,7 +467,8 @@ class Database_Report extends Report_Engine
 
         $full_sql = $select . ' ' .  $where . ' ' .  $group_by . ' ' .  $order_by . ' ' .  $limit . ';';
 
-        // clearos_log('reports_database', $full_sql);
+        if (clearos_is_debug())
+            clearos_log('reports_database', $full_sql);
 
         // Check cache
         //------------
