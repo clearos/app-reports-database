@@ -8,8 +8,4 @@
 # Bootstrap
 #----------
 
-logger -p local6.notice -t installer "app-reports-database-core - initializing reports database"
 /usr/clearos/apps/reports_database/deploy/initialize-database >/dev/null 2>&1
-
-logger -p local6.notice -t installer "app-reports-database-core - initializing tables"
-/usr/clearos/apps/reports_database/deploy/initialize-tables >/dev/null 2>&1
