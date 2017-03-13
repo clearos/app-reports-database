@@ -1,7 +1,7 @@
 
 Name: app-reports-database
 Epoch: 1
-Version: 2.3.0
+Version: 2.3.1
 Release: 1%{dist}
 Summary: Reports Database - Core
 License: LGPLv3
@@ -60,6 +60,7 @@ exit 0
 %files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/reports_database/packaging
+%exclude /usr/clearos/apps/reports_database/unify.json
 %dir /usr/clearos/apps/reports_database
 %dir /var/clearos/reports_database
 %dir /var/clearos/reports_database/cache

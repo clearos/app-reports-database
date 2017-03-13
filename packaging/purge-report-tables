@@ -43,12 +43,23 @@ if [ -z "$DBPASS" ]; then
     exit 1
 fi
 
+# Recreate table (if autoindex missing)
+#--------------------------------------
+
+BAD_INDEX_EXISTS=`$MYSQL -ureports -p"$DBPASS" -e "SELECT * FROM ${BASENAME} WHERE id = 0 LIMIT 1;" reports 2>/dev/null`
+
+if ( [ -n "$BAD_INDEX_EXISTS" ] ); then
+    echo "Re-creating tables for ${BASENAME}"
+    logger -p local6.notice -t installer "app-reports-database-core - re-creating tables for $BASENAME"
+    $MYSQL -ureports -p"$DBPASS" reports < /usr/clearos/apps/${BASENAME}_report/deploy/db_tables.sql
+fi
+
 # Purge database
 #---------------
 
 $MYSQL -ureports -p"$DBPASS" -e "\
 DROP TABLE IF EXISTS ${BASENAME}_prune; \
-CREATE TABLE ${BASENAME}_prune SELECT * FROM $BASENAME ORDER BY timestamp DESC LIMIT $RECORDS; \
+CREATE TABLE ${BASENAME}_prune LIKE ${BASENAME}; INSERT INTO ${BASENAME}_prune SELECT * FROM ${BASENAME} ORDER BY timestamp DESC LIMIT ${RECORDS}; \
 RENAME TABLE ${BASENAME} TO ${BASENAME}_old, ${BASENAME}_prune TO ${BASENAME};  \
 DROP TABLE ${BASENAME}_old; \
 " reports
