@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'reports_database';
-$app['version'] = '1.6.7';
+$app['version'] = '1.9.0';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -43,6 +43,10 @@ $app['core_directory_manifest'] = array(
 $app['core_file_manifest'] = array(
     'initialize-report-tables' => array(
         'target' => '/usr/sbin/initialize-report-tables',
+        'mode' => '0755',
+    ),
+    'purge-report-tables' => array(
+        'target' => '/usr/sbin/purge-report-tables',
         'mode' => '0755',
     ),
 );
