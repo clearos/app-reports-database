@@ -1,11 +1,13 @@
 
 Name: app-reports-database
 Epoch: 1
-Version: 2.3.1
+Version: 2.5.0
 Release: 1%{dist}
-Summary: Reports Database - Core
+Summary: Reports Database - API
 License: LGPLv3
-Group: ClearOS/Libraries
+Group: Applications/API
+Packager: ClearFoundation
+Vendor: ClearFoundation
 Source: app-reports-database-%{version}.tar.gz
 Buildarch: noarch
 
@@ -13,10 +15,10 @@ Buildarch: noarch
 The Reports Database provides a common set of tools for managing database-driven reports.
 
 %package core
-Summary: Reports Database - Core
+Summary: Reports Database - API
 Requires: app-base-core
 Requires: app-base-core >= 1:1.4.9
-Requires: app-reports
+Requires: app-reports-core
 Requires: app-system-database-core >= 1:1.2.4
 Requires: webconfig-php-mysql
 
